@@ -1,0 +1,14 @@
+[
+    {
+        "mood": "happy",
+        "note": "Feeling great today!"
+    },
+    {
+        "mood": "sad",
+        "note": "It's been a tough day"
+    },
+    {
+        "mood": "excited",
+        "note": "Looking forward to the trip!"
+    }
+]

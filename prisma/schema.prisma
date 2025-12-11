@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  age       Int?
+  gender    String?
+  job       String?
+  otp       String?       
+  otpExpiry DateTime?     
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  emotionDiaries EmotionDiary[]
+  assessments Assessment[]
+}
+model EmotionDiary {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  note      String?  @db.Text     
+  mood      String                 
+  createdAt DateTime @default(now())
+  @@map("emotion_diaries")
+}
+model TestType {
+  id          Int          @id @default(autoincrement())
+  code        String       @unique
+  name        String       
+  description String?      @db.Text
+  questions   Question[]   
+  scales      TestScale[]  
+}
+model TestScale {
+  id        Int      @id @default(autoincrement())
+  label     String   
+  value     Int     
+  testCode  String
+  test      TestType @relation(fields: [testCode], references: [code])
+  @@unique([testCode, value]) 
+}
+model Question {
+  id          Int      @id @default(autoincrement())
+  content     String   @db.Text 
+  order       Int     
+  testCode    String
+  test        TestType @relation(fields: [testCode], references: [code])
+  category    String?  
+}
+
+model Assessment {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  testType    String   
+  totalScore  Int     
+  resultDetail Json?   
+  severity    String?  
+  answers     Json   
+  createdAt   DateTime @default(now())
+}
+model Category {
+  id          Int        @id @default(autoincrement())
+  title       String     
+  description String?    
+  thumbnail   String?    
+  createdAt   DateTime   @default(now())
+  exercises   Exercise[] 
+}
+model Exercise {
+  id          Int      @id @default(autoincrement())
+  title       String   
+  description String?  
+  instruction String?  @db.Text 
+  videoUrl    String   
+  thumbnail   String? 
+  categoryId  Int
+  category    Category @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime @default(now())
+}
