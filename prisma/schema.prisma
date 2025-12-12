@@ -83,3 +83,12 @@ model Exercise {
   category    Category @relation(fields: [categoryId], references: [id])
   createdAt   DateTime @default(now())
 }
+model DispsysProjs {
+  id           Int      @id @default(autoincrement())
+  proj_name    String?  @db.VarChar(255)
+  proj_dir     String?  @db.VarChar(255)
+  proj_version String?  @db.VarChar(255)
+  proj_desc    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
