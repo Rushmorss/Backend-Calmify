@@ -36,17 +36,22 @@ const authController = {
     try {
       const { email, password } = req.body;
       if (!email || !password) {
-        return res.status(400).json({ success: false, message: "Email và mật khẩu là bắt buộc" });
+        return res
+          .status(400)
+          .json({ success: false, message: "Email và mật khẩu là bắt buộc" });
       }
       const result = await authService.login({ email, password });
-      res.cookie("token", result.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 24 * 60 * 60 * 1000,
+      res.json({
+        success: true,
+        message: "Đăng nhập thành công",
+        token: result.token,
+        user: result.user,
       });
-      res.json({ success: true, message: "Đăng nhập thành công", data: result });
     } catch (err) {
-      res.status(401).json({ success: false, message: err.message || "Sai email hoặc mật khẩu" });
+      res.status(401).json({
+        success: false,
+        message: err.message || "Sai email hoặc mật khẩu",
+      });
     }
   },
 

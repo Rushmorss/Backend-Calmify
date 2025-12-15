@@ -1,9 +1,15 @@
-import express from 'express';
-import * as testController from '../controllers/testController.js';
-import authMiddleware from '../middlewares/auth.middleware.js'; 
+import express from "express";
+import {
+  getTestById,
+  submitTest,
+  getTestResultById,
+} from "../controllers/testController.js";
+import authMiddleware from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
-router.get('/:code', testController.getTestContent);
-router.post('/submit', authMiddleware, testController.submitTest);
+
+router.post("/submit", authMiddleware, submitTest);
+router.get("/result/:id", authMiddleware, getTestResultById);
+router.get("/:code", getTestById);
 
 export default router;

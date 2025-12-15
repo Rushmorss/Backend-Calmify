@@ -1,7 +1,8 @@
 import emotionService from "../services/emotionService.js";
 const createEntry = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.params.userId;
+    console.log("User ID from params:", req.params);
     const { note, mood } = req.body;
 
     if (!mood) {
@@ -22,7 +23,7 @@ const createEntry = async (req, res) => {
 
 const getStats = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.params.userId;
     const data = await emotionService.getEmotionStats(userId);
     
     return res.status(200).json({
@@ -37,7 +38,7 @@ const getStats = async (req, res) => {
 
 const getHistory = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.params.userId;
         const data = await emotionService.getHistory(userId);
         return res.status(200).json(data);
     } catch (error) {
