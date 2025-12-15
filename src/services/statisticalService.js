@@ -35,20 +35,55 @@ const calculateDistribution = (records) => {
 
 const getStatistics = async (userId, type, dateParam) => {
     let startDate = new Date();
-    let endDate = new Date();
+    let endDate = new Date(); 
     const queryDate = dateParam ? new Date(dateParam) : new Date();
     let labels = [];
     let chartData = [];
+
     if (type === 'day') {
-        startDate = new Date(queryDate.setHours(0, 0, 0, 0));
-        endDate = new Date(queryDate.setHours(23, 59, 59, 999));
-        labels = ['Sáng', 'Chiều', 'Tối', 'Đêm'];
+        startDate = new Date(queryDate);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(queryDate);
+        endDate.setHours(23, 59, 59, 999);
+        labels = ['Sáng (6-12h)', 'Chiều (12-18h)', 'Tối (18-24h)', 'Đêm (0-6h)'];
+
+    } else if (type === 'week') {
+        const day = queryDate.getDay();
+        const diff = queryDate.getDate() - day + (day === 0 ? -6 : 1);
+        startDate = new Date(queryDate);
+        startDate.setDate(diff);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+        endDate.setHours(23, 59, 59, 999);
+        labels = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
+
     } else if (type === 'month') {
         startDate = new Date(queryDate.getFullYear(), queryDate.getMonth(), 1);
-        endDate = new Date(queryDate.getFullYear(), queryDate.getMonth() + 1, 0, 23, 59, 59);
+        endDate = new Date(queryDate.getFullYear(), queryDate.getMonth() + 1, 0);
+        endDate.setHours(23, 59, 59, 999);
+        const daysInMonth = endDate.getDate(); 
+
+        for (let i = 1; i <= daysInMonth; i++) {
+            labels.push(`${i}/${queryDate.getMonth() + 1}`);
+        }
+    } else if (type === 'quarter') {
+        const currentMonth = queryDate.getMonth();
+        const quarterIndex = Math.floor(currentMonth / 3);
+        const startMonth = quarterIndex * 3;
+        startDate = new Date(queryDate.getFullYear(), startMonth, 1);
+        endDate = new Date(queryDate.getFullYear(), startMonth + 3, 0, 23, 59, 59);
+
+        labels = [
+            `Tháng ${startMonth + 1}`,
+            `Tháng ${startMonth + 2}`,
+            `Tháng ${startMonth + 3}`
+        ];
+
     } else if (type === 'year') {
         startDate = new Date(queryDate.getFullYear(), 0, 1);
         endDate = new Date(queryDate.getFullYear(), 11, 31, 23, 59, 59);
+        labels = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
     }
 
     const records = await prisma.emotionDiary.findMany({
@@ -60,7 +95,7 @@ const getStatistics = async (userId, type, dateParam) => {
     });
 
     if (type === 'day') {
-        const periods = [[6, 12], [12, 18], [18, 24], [0, 6]]; 
+        const periods = [[6, 12], [12, 18], [18, 24], [0, 6]];
         chartData = periods.map(([start, end]) => {
             const subRecords = records.filter(r => {
                 const h = new Date(r.createdAt).getHours();
@@ -68,22 +103,36 @@ const getStatistics = async (userId, type, dateParam) => {
             });
             return calculateAverage(subRecords);
         });
-    } else if (type === 'month') {
-        labels = ['Tuần 1', 'Tuần 2', 'Tuần 3', 'Tuần 4']; 
-        const daysInMonth = endDate.getDate();
-        const quarter = Math.ceil(daysInMonth / 4);
-        
-        for (let i = 0; i < 4; i++) {
-            const startDay = i * quarter + 1;
-            const endDay = (i + 1) * quarter;
+
+    } else if (type === 'week') {
+        for (let i = 0; i < 7; i++) {
+            const currentDayDate = new Date(startDate);
+            currentDayDate.setDate(startDate.getDate() + i);
+
             const subRecords = records.filter(r => {
-                const d = new Date(r.createdAt).getDate();
-                return d >= startDay && d <= endDay;
+                const rDate = new Date(r.createdAt);
+                return rDate.getDate() === currentDayDate.getDate() &&
+                    rDate.getMonth() === currentDayDate.getMonth();
             });
             chartData.push(calculateAverage(subRecords));
         }
+
+    } else if (type === 'month') {
+        const daysInMonth = endDate.getDate();
+        for (let i = 1; i <= daysInMonth; i++) {
+            const subRecords = records.filter(r => new Date(r.createdAt).getDate() === i);
+            chartData.push(calculateAverage(subRecords));
+        }
+
+    } else if (type === 'quarter') {
+        const startMonth = startDate.getMonth();
+        for (let i = 0; i < 3; i++) {
+            const targetMonth = startMonth + i;
+            const subRecords = records.filter(r => new Date(r.createdAt).getMonth() === targetMonth);
+            chartData.push(calculateAverage(subRecords));
+        }
+
     } else if (type === 'year') {
-        labels = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
         for (let i = 0; i < 12; i++) {
             const subRecords = records.filter(r => new Date(r.createdAt).getMonth() === i);
             chartData.push(calculateAverage(subRecords));
@@ -91,14 +140,22 @@ const getStatistics = async (userId, type, dateParam) => {
     }
 
     return {
-        chart: { labels, data: chartData },
+        chart: {
+            labels,
+            data: chartData
+        },
         distribution: calculateDistribution(records),
         summary: {
             total: records.length,
-            average: calculateAverage(records)
+            average: calculateAverage(records),
+            period: {
+                start: startDate,
+                end: endDate
+            }
         }
     };
 };
+
 export default {
     getStatistics
 };
