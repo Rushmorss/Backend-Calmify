@@ -131,21 +131,13 @@ model ChatMessage {
   @@map("chat_messages")
 } 
 
-model Category {
-  id          Int        @id @default(autoincrement())
-  title       String
-  description String?
-  thumbnail   String?
-  createdAt   DateTime   @default(now())
-  exercises   Exercise[]
-}
-
 model ExerciseCategory {
   id          Int      @id @default(autoincrement())
   title       String   @db.VarChar(255)
   description String?  @db.Text
   thumbnail   String?  @db.VarChar(500)
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  exercises Exercise[]
   @@map("exercise_categories")
 }
 
@@ -157,8 +149,8 @@ model Exercise {
   videoUrl    String   @map("video_url") @db.VarChar(500)
   thumbnail   String?  @db.VarChar(500)
   categoryId  Int      @map("category_id")
-  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamp(0)
-  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  category ExerciseCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   @@map("exercises")
 }
 
