@@ -1,104 +1,116 @@
 generator client {
   provider = "prisma-client-js"
 }
+
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  age       Int?
-  gender    String?
-  job       String?
-  otp       String?       
-  otpExpir
-  resetToken String? DateTime?  
-  resetTokenExpiry DateTime?   
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  fullName  String?
-  phoneNumber String?
-  avatar String?
-  settings  UserSetting? 
-  emotionDiaries EmotionDiary[]
-  assessments Assessment[]
+  id               Int            @id @default(autoincrement())
+  email            String         @unique
+  password         String
+  age              Int?
+  gender           String?
+  job              String?
+  otp              String?
+  otpExpiry        DateTime?      
+  resetToken       String?        
+  resetTokenExpiry DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  fullName         String?
+  phoneNumber      String?
+  avatar           String?
+  settings         UserSetting?
+  emotionDiaries   EmotionDiary[]
+  assessments      Assessment[]
 }
+
 model UserSetting {
   id               Int     @id @default(autoincrement())
-  userId           Int     @unique // Khóa ngoại trỏ về User (Int)
-  dailyReminder    Boolean @default(true)  // Nhắc nhở hằng ngày
-  weeklyReport     Boolean @default(true)  // Báo cáo tuần
-  testReminder     Boolean @default(false) // Nhắc làm bài test
-  chatNotification Boolean @default(true)  // Tin nhắn trò chuyện
+  userId           Int     @unique 
+  dailyReminder    Boolean @default(true) 
+  weeklyReport     Boolean @default(true) 
+  testReminder     Boolean @default(false)
+  chatNotification Boolean @default(true) 
   user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
 model EmotionDiary {
   id        Int      @id @default(autoincrement())
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
-  note      String?  @db.Text     
-  mood      String                 
+  note      String?  @db.Text
+  mood      String
   createdAt DateTime @default(now())
+
   @@index([userId, createdAt])
   @@map("emotion_diaries")
 }
+
 model TestType {
-  id          Int          @id @default(autoincrement())
-  code        String       @unique
-  name        String       
-  description String?      @db.Text
-  questions   Question[]   
-  scales      TestScale[]  
+  id          Int         @id @default(autoincrement())
+  code        String      @unique
+  name        String
+  description String?     @db.Text
+  questions   Question[]
+  scales      TestScale[]
 }
+
 model TestScale {
-  id        Int      @id @default(autoincrement())
-  label     String   
-  value     Int     
-  testCode  String
-  test      TestType @relation(fields: [testCode], references: [code])
-  @@unique([testCode, value]) 
+  id       Int      @id @default(autoincrement())
+  label    String
+  value    Int
+  testCode String
+  test     TestType @relation(fields: [testCode], references: [code])
+
+  @@unique([testCode, value])
 }
+
 model Question {
-  id          Int      @id @default(autoincrement())
-  content     String   @db.Text 
-  order       Int     
-  testCode    String
-  test        TestType @relation(fields: [testCode], references: [code])
-  category    String?  
+  id       Int      @id @default(autoincrement())
+  content  String   @db.Text
+  order    Int
+  testCode String
+  test     TestType @relation(fields: [testCode], references: [code])
+  category String?
 }
 
 model Assessment {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  user        User     @relation(fields: [userId], references: [id])
-  testType    String   
-  totalScore  Int     
-  resultDetail Json?   
-  severity    String?  
-  answers     Json   
-  createdAt   DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id])
+  testType     String
+  totalScore   Int
+  resultDetail Json?
+  severity     String?
+  answers      Json
+  createdAt    DateTime @default(now())
 }
+
 model Category {
   id          Int        @id @default(autoincrement())
-  title       String     
-  description String?    
-  thumbnail   String?    
+  title       String
+  description String?
+  thumbnail   String?
   createdAt   DateTime   @default(now())
-  exercises   Exercise[] 
+  exercises   Exercise[]
 }
+
 model Exercise {
   id          Int      @id @default(autoincrement())
-  title       String   
-  description String?  
-  instruction String?  @db.Text 
-  videoUrl    String   
-  thumbnail   String? 
+  title       String
+  description String?
+  instruction String?  @db.Text
+  videoUrl    String
+  thumbnail   String?
   categoryId  Int
   category    Category @relation(fields: [categoryId], references: [id])
   createdAt   DateTime @default(now())
 }
+
 model DispsysProjs {
   id           Int      @id @default(autoincrement())
   proj_name    String?  @db.VarChar(255)
