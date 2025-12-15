@@ -28,19 +28,35 @@ export async function login({ email, password }) {
 }
 
 export async function sendForgotOTP({ email }) {
-  console.log("ĐÃ VÀO SERVICE. Email nhận được LÀ:", email);
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) throw new Error("User not found");
-  const otp = generateOTP(6);
-  const expiry = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
-  await prisma.user.update({
-    where: { email },
-    data: { otp, otpExpiry: expiry },
-  });
-  const subject = "Mã xác nhận đặt lại mật khẩu";
-  const html = `<p>Mã xác nhận của bạn là: <b>${otp}</b></p><p>Mã có hiệu lực trong ${OTP_TTL_MINUTES} phút.</p>`;
-  await sendEmail({ to: email, subject, html, text: `Mã xác nhận: ${otp}` });
-  return { message: "OTP sent" };
+  console.log("ĐÃ VÀO SERVICE. Email nhận được LÀ:", email);
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) throw new Error("User not found");
+  const otp = generateOTP(6);
+  const expiry = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
+  await prisma.user.update({
+    where: { email },
+    data: { otp, otpExpiry: expiry },
+  });
+  const subject = "Mã xác thực bảo mật (OTP) - Calmify App";
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #ffffff;">
+      <h2 style="color: #4CAF50; text-align: center;">Yêu cầu đặt lại mật khẩu</h2>
+      <p style="font-size: 16px; color: #333;">Xin chào,</p>
+      <p style="font-size: 16px; color: #333;">Chúng tôi nhận được yêu cầu khôi phục mật khẩu cho tài khoản Calmify của bạn. Hãy sử dụng mã bên dưới để xác thực:</p>
+      <div style="background-color: #f9f9f9; padding: 15px; text-align: center; margin: 20px 0; border-radius: 5px;">
+        <span style="font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #333;">${otp}</span>
+      </div>
+      <p style="font-size: 14px; color: #555;">Mã này sẽ hết hạn sau <b>${OTP_TTL_MINUTES} phút</b>.</p>
+      <p style="font-size: 14px; color: #555;">Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email này.</p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+      <p style="text-align: center; font-size: 12px; color: #888;">
+        © 2024 Calmify App Team. All rights reserved.
+      </p>
+    </div>
+  `;
+  const text = `Mã xác thực Calmify của bạn là: ${otp}. Mã hết hạn sau ${OTP_TTL_MINUTES} phút.`;
+  await sendEmail({ to: email, subject, html, text });
+  return { message: "OTP sent" };
 }
 
 export async function verifyOtp({ email, otp }) {

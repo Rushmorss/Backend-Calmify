@@ -94,12 +94,8 @@ const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Đang tạo dữ liệu mẫu...');
-
-  // Xóa dữ liệu cũ để tránh trùng lặp (tùy chọn)
   await prisma.exercise.deleteMany();
   await prisma.category.deleteMany();
-
-  // 1. Tạo Category: THIỀN
   const thien = await prisma.category.create({
     data: {
       title: 'Thiền Chánh Niệm',
@@ -125,8 +121,6 @@ async function main() {
       }
     }
   });
-
-  // 2. Tạo Category: YOGA
   await prisma.category.create({
     data: {
       title: 'Yoga Trị Liệu',

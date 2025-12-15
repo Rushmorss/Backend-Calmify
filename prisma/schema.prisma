@@ -13,15 +13,15 @@ model User {
   gender    String?
   job       String?
   otp       String?       
-  otpExpiry DateTime?  
-  resetToken String?
+  otpExpir
+  resetToken String? DateTime?  
   resetTokenExpiry DateTime?   
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   fullName  String?
   phoneNumber String?
   avatar String?
-  settings  UserSetting? // quan hệ 1 -  1 với bảng cơ sở dữ liệu
+  settings  UserSetting? 
   emotionDiaries EmotionDiary[]
   assessments Assessment[]
 }
