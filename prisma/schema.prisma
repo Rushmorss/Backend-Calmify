@@ -38,7 +38,7 @@ model EmotionIcon {
 }
 
 model EmotionDiary {
-  id          String   @id @db.VarChar(36)
+  id          String   @id @default(uuid()) @db.VarChar(36)
   userId      Int      @map("user_id")
   iconId      String?  @map("icon_id") @db.VarChar(36)
   iconUrl     String?  @map("icon_url") @db.VarChar(255)
