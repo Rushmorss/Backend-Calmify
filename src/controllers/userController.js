@@ -1,75 +1,46 @@
-import userService from "../services/userService.js";
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
 
-const getProfile = async (req, res) => {
+export const getMe = async (req, res) => {
   try {
-    const userId = parseInt(req.user.id); 
-    if (isNaN(userId)) {
-        return res.status(400).json({ message: "Invalid User ID" });
-    }
-    const user = await userService.getUserProfile(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.status(200).json({
-      success: true,
-      data: user
+    const userId = req.user.id;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
     });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Lỗi Server" });
+    res.json({ success: true, data: user });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Lỗi server" });
   }
 };
 
-const updateProfile = async (req, res) => {
+export const updateAvatar = async (req, res) => {
+  const userId = req.user.id;
+  const file = req.file;
+  if (!file) return res.status(400).json({ success: false, message: "Thiếu file" });
   try {
-    const userId = parseInt(req.user.id);
-    const updatedUser = await userService.updateUserProfile(userId, req.body);
-    
-    res.status(200).json({
-      success: true,
-      message: "Cập nhật thông tin thành công",
-      data: updatedUser
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-const updateSettings = async (req, res) => {
-  try {
-    const userId = parseInt(req.user.id);
-    const updatedSettings = await userService.updateUserSettings(userId, req.body);
-    res.status(200).json({
-      success: true,
-      message: "Cập nhật cài đặt thành công",
-      data: updatedSettings
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-const uploadAvatar = async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: "Vui lòng chọn file ảnh" });
-    }
-    const userId = parseInt(req.user.id);
-    const avatarPath = req.file.path.replace(/\\/g, "/"); 
-    const updatedUser = await userService.updateUserProfile(userId, {
-      avatar: avatarPath 
-    });
+    const avatarPath = `/uploads/avatars/${file.filename}`;
 
-    res.status(200).json({
-      success: true,
-      message: "Upload ảnh đại diện thành công",
-      data: { avatar: avatarPath }
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl: avatarPath },
     });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Lỗi upload ảnh" });
+    res.json({ success: true, data: user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Lỗi upload" });
   }
 };
-export default {
-    getProfile,
-    updateProfile,
-    updateSettings,
-    uploadAvatar
-}
+
+export const updateUser = async (req, res) => {
+  const userId = req.user.id;
+  const { nickname } = req.body; 
+  try {
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { nickname: nickname }, 
+    });
+    res.json({ success: true, data: user });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Lỗi cập nhật info" });
+  }
+};

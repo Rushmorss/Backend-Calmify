@@ -3,5 +3,5 @@ import statisticalController from '../controllers/statisticalController.js';
 import authMiddleware from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
-router.get('/', authMiddleware, statisticalController.getStats);
+router.get('/', authMiddleware, statisticalController.getStatistics);
 export default router;

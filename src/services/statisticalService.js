@@ -33,7 +33,17 @@ const calculateDistribution = (records) => {
     }));
 };
 
-const getStatistics = async (userId, type, dateParam) => {
+const formatTime = (dateObj) => {
+    const h = dateObj.getHours().toString().padStart(2, '0');
+    const m = dateObj.getMinutes().toString().padStart(2, '0');
+    return `${h}:${m}`;
+};
+
+const getStatistics = async (currentUser, type, dateParam, targetUserId) => {
+    let userIdToQuery = currentUser.id;
+    if (currentUser.role === 'ADMIN' && targetUserId) {
+        userIdToQuery = parseInt(targetUserId); 
+    }
     let startDate = new Date();
     let endDate = new Date(); 
     const queryDate = dateParam ? new Date(dateParam) : new Date();
@@ -45,8 +55,6 @@ const getStatistics = async (userId, type, dateParam) => {
         startDate.setHours(0, 0, 0, 0);
         endDate = new Date(queryDate);
         endDate.setHours(23, 59, 59, 999);
-        labels = ['Sáng (6-12h)', 'Chiều (12-18h)', 'Tối (18-24h)', 'Đêm (0-6h)'];
-
     } else if (type === 'week') {
         const day = queryDate.getDay();
         const diff = queryDate.getDate() - day + (day === 0 ? -6 : 1);
@@ -63,22 +71,17 @@ const getStatistics = async (userId, type, dateParam) => {
         endDate = new Date(queryDate.getFullYear(), queryDate.getMonth() + 1, 0);
         endDate.setHours(23, 59, 59, 999);
         const daysInMonth = endDate.getDate(); 
-
         for (let i = 1; i <= daysInMonth; i++) {
             labels.push(`${i}/${queryDate.getMonth() + 1}`);
         }
+
     } else if (type === 'quarter') {
         const currentMonth = queryDate.getMonth();
         const quarterIndex = Math.floor(currentMonth / 3);
         const startMonth = quarterIndex * 3;
         startDate = new Date(queryDate.getFullYear(), startMonth, 1);
         endDate = new Date(queryDate.getFullYear(), startMonth + 3, 0, 23, 59, 59);
-
-        labels = [
-            `Tháng ${startMonth + 1}`,
-            `Tháng ${startMonth + 2}`,
-            `Tháng ${startMonth + 3}`
-        ];
+        labels = [`Tháng ${startMonth + 1}`, `Tháng ${startMonth + 2}`, `Tháng ${startMonth + 3}`];
 
     } else if (type === 'year') {
         startDate = new Date(queryDate.getFullYear(), 0, 1);
@@ -88,27 +91,27 @@ const getStatistics = async (userId, type, dateParam) => {
 
     const records = await prisma.emotionDiary.findMany({
         where: {
-            userId: userId,
+            userId: userIdToQuery, 
             createdAt: { gte: startDate, lte: endDate }
         },
         orderBy: { createdAt: 'asc' }
     });
 
     if (type === 'day') {
-        const periods = [[6, 12], [12, 18], [18, 24], [0, 6]];
-        chartData = periods.map(([start, end]) => {
-            const subRecords = records.filter(r => {
-                const h = new Date(r.createdAt).getHours();
-                return h >= start && h < end;
+        if (records.length > 0) {
+            records.forEach(record => {
+                labels.push(formatTime(new Date(record.createdAt)));
+                chartData.push(getMoodScore(record.mood));
             });
-            return calculateAverage(subRecords);
-        });
+        } else {
+            labels = []; 
+            chartData = [];
+        }
 
     } else if (type === 'week') {
         for (let i = 0; i < 7; i++) {
             const currentDayDate = new Date(startDate);
             currentDayDate.setDate(startDate.getDate() + i);
-
             const subRecords = records.filter(r => {
                 const rDate = new Date(r.createdAt);
                 return rDate.getDate() === currentDayDate.getDate() &&
@@ -151,7 +154,8 @@ const getStatistics = async (userId, type, dateParam) => {
             period: {
                 start: startDate,
                 end: endDate
-            }
+            },
+            viewingUserId: userIdToQuery 
         }
     };
 };
