@@ -79,7 +79,7 @@ async function main() {
     }
   })
   
-  console.log('✅ Nạp dữ liệu hoàn tất!')
+  console.log('Nạp dữ liệu hoàn tất!')
 }
 
 main()
