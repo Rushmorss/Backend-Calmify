@@ -29,29 +29,27 @@ model User {
   @@map("users")
 }
 model EmotionIcon {
-  id           String   @id @db.VarChar(36)
-  name         String   @db.VarChar(100)
-  icon         String?  @db.VarChar(255)
-  defaultScore Int      @default(0) @map("default_score")
-  emotionDiaries EmotionDiary[]
+  id           String @id @default(uuid()) @db.VarChar(36)
+  name         String @db.VarChar(100)
+  icon         String? 
+  defaultScore Int    @default(0) @map("default_score")
+  diaries      EmotionDiary[]
   @@map("emotion_icons")
 }
-
 model EmotionDiary {
-  id          String   @id @default(uuid()) @db.VarChar(36)
-  userId      Int      @map("user_id")
-  iconId      String?  @map("icon_id") @db.VarChar(36)
-  iconUrl     String?  @map("icon_url") @db.VarChar(255)
-  moodScore   Int?     @default(0) @map("mood_score")
-  note        String?  @db.Text
-  diaryDate   DateTime @map("diary_date") @db.Date
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  emotionIcon EmotionIcon? @relation(fields: [iconId], references: [id], onDelete: SetNull)
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  userId    Int      @map("user_id")
+  iconId    String?  @map("icon_id") @db.VarChar(36)
+  iconUrl   String?  @map("icon_url")
+  moodScore Int?     @default(0) @map("mood_score")
+  note      String?  @db.Text
+  diaryDate DateTime @map("diary_date") @db.Date
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  icon EmotionIcon? @relation(fields: [iconId], references: [id], onDelete: SetNull)
   @@map("emotion_diaries")
 }
-
 model TestType {
   id          Int         @id @default(autoincrement())
   code        String      @unique @db.VarChar(50)
