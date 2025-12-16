@@ -1,39 +1,39 @@
-import prisma from "../config/prismaClient.js";
-
+import prisma from "../config/prismaClient.js"; 
 
 const createEmotionEntry = async (userId, data) => {
-  console.log("Creating entry for userId:", userId, "with data:", data);
-  console.log("Creating entry for userId: 2", parseInt(userId, 10));
   return await prisma.emotionDiary.create({
     data: {
       userId: parseInt(userId, 10),
       note: data.note,
-      mood: data.mood, 
+      moodScore: data.moodScore,
+      diaryDate: data.diaryDate,
+      iconUrl: data.iconUrl
     },
   });
 };
 
 const getEmotionStats = async (userId) => {
   const stats = await prisma.emotionDiary.groupBy({
-    by: ['mood'],
-    where: {
-      userId: parseInt(userId, 10),
-    },
-    _count: {
-      mood: true,
-    },
+    by: ['iconUrl'], 
+    where: { userId: parseInt(userId, 10) },
+    _count: { iconUrl: true },
   });
   return stats.map(item => ({
-    label: item.mood,
-    value: item._count.mood
+    label: item.iconUrl || 'Khác',
+    value: item._count.iconUrl
   }));
 };
 
 const getHistory = async (userId) => {
-    return await prisma.emotionDiary.findMany({
-        where: { userId : parseInt(userId, 10) },
-        orderBy: { createdAt: 'desc' }
-    });
+  const history = await prisma.emotionDiary.findMany({
+    where: { userId: parseInt(userId, 10) },
+    orderBy: { diaryDate: 'desc' } 
+  });
+
+  return history.map(item => ({
+    ...item,
+    mood: item.iconUrl || '😐' 
+  }));
 }
 
 export default {
