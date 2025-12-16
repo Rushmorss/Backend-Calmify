@@ -10,7 +10,7 @@ datasource db {
 model User {
   id               Int            @id @default(autoincrement())
   email            String         @unique @db.VarChar(100)
-  password         String         @db.VarChar(50)
+  password         String         @db.VarChar(255)
   nickname         String?        @db.VarChar(50)
   avatarUrl        String?        @map("avatar_url") @db.VarChar(500)
   age              Int?           
