@@ -9,6 +9,7 @@ import emotionRoutes from "./routes/emotionRoutes.js";
 import exerciseRoutes from "./routes/exerciseRoutes.js"; 
 import statisticalRoutes from "./routes/statisticalRoutes.js";
 import supportRoutes from "./routes/supportRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,6 +43,7 @@ app.use("/api/exercises", exerciseRoutes);
 app.use("/api/statistics", statisticalRoutes);
 app.use("/uploads", express.static('uploads'));
 app.use("/api/supports", supportRoutes);
+app.use("/api/users", userRoutes);
 app.use(express.static(path.join(__dirname, "../../frontend/dist")));
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../../frontend/dist/index.html"));

@@ -1,57 +1,69 @@
-import prisma from "../config/prismaClient.js";
+import { PrismaClient } from "@prisma/client";
 
-const getUserProfile = async (userId) => {
+const prisma = new PrismaClient();
+
+/**
+ * @param {number} 
+ * @returns {Promise<Object>} 
+ */
+export const getUserById = async (userId) => {
   return await prisma.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
       email: true,
-      fullName: true,
+      nickname: true,
+      avatarUrl: true,
       age: true,
       gender: true,
       job: true,
-      phoneNumber: true,
+      role: true,
       createdAt: true,
-      settings: true, 
+      updatedAt: true,
     },
   });
 };
 
-const updateUserProfile = async (userId, data) => {
+/**
+ * @param {number} 
+ * @param {Object} 
+ * @returns {Promise<Object>} 
+ */
+export const updateUserProfile = async (userId, updateData) => {
+  const { nickname, age, gender, job } = updateData;
+  const dataToUpdate = {};
+  if (nickname !== undefined) dataToUpdate.nickname = nickname;
+  if (age !== undefined) dataToUpdate.age = parseInt(age);
+  if (gender !== undefined) dataToUpdate.gender = gender;
+  if (job !== undefined) dataToUpdate.job = job;
   return await prisma.user.update({
     where: { id: userId },
-    data: {
-      fullName: data.fullName,
-      age: data.age ? parseInt(data.age) : undefined, 
-      gender: data.gender,
-      job: data.job,
-      phoneNumber: data.phoneNumber,
-      avatar: data.avatar,
-    },
+    data: dataToUpdate,
     select: {
       id: true,
-      fullName: true,
+      nickname: true,
       age: true,
       gender: true,
       job: true,
-      phoneNumber: true
+      email: true,
+      avatarUrl: true
     }
   });
 };
 
-const updateUserSettings = async (userId, settingsData) => {
-  return await prisma.userSetting.upsert({
-    where: { userId: userId },
-    update: settingsData,
-    create: {
-      userId: userId,
-      ...settingsData,
-    },
+ /**
+ * @param {number} 
+ * @param {string}
+ * @returns {Promise<Object>} 
+ */
+export const updateUserAvatar = async (userId, avatarPath) => {
+  return await prisma.user.update({
+    where: { id: userId },
+    data: { avatarUrl: avatarPath },
+    select: {
+      id: true,
+      nickname: true,
+      avatarUrl: true
+    }
   });
 };
-
-export default {
-    getUserProfile,
-    updateUserProfile,
-    updateUserSettings
-}
