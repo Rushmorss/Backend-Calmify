@@ -11,6 +11,7 @@
     "seed": "node prisma/seed.js"
   },
   "dependencies": {
+    "@openai/agents": "^0.3.6",
     "@prisma/client": "^5.22.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
