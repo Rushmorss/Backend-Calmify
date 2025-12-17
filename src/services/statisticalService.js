@@ -1,36 +1,14 @@
 import prisma from "../config/prismaClient.js";
 
 const getMoodScore = (moodString) => {
-    const mapping = {
-        'Rất vui': 5,
-        'Vui': 4,
-        'Bình thường': 3,
-        'Buồn': 2,
-        'Rất buồn': 1
-    };
+    const mapping = { 'Rất vui': 5, 'Vui': 4, 'Bình thường': 3, 'Buồn': 2, 'Rất buồn': 1 };
     return mapping[moodString] || 3;
 };
 
 const calculateAverage = (records) => {
     if (!records || records.length === 0) return 0;
-    const total = records.reduce((sum, record) => sum + getMoodScore(record.mood), 0);
+    const total = records.reduce((sum, record) => sum + (record.mood_score || getMoodScore(record.mood)), 0);
     return parseFloat((total / records.length).toFixed(1));
-};
-
-const calculateDistribution = (records) => {
-    const counts = { 'Rất vui': 0, 'Vui': 0, 'Bình thường': 0, 'Buồn': 0, 'Rất buồn': 0 };
-    let total = 0;
-    records.forEach(r => {
-        if (counts[r.mood] !== undefined) {
-            counts[r.mood]++;
-            total++;
-        }
-    });
-    return Object.keys(counts).map(key => ({
-        label: key,
-        count: counts[key],
-        percent: total > 0 ? Math.round((counts[key] / total) * 100) : 0
-    }));
 };
 
 const formatTime = (dateObj) => {
@@ -39,122 +17,89 @@ const formatTime = (dateObj) => {
     return `${h}:${m}`;
 };
 
+const getTestHistory = async (userId) => {
+    try {
+        const assessments = await prisma.assessment.findMany({
+            where: { userId: userId },
+            include: { 
+                testType: true 
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        const historyMap = {};
+        assessments.forEach(record => {
+            const testCode = record.testTypeCode; 
+            
+            if (!historyMap[testCode]) {
+                historyMap[testCode] = {
+                    testId: record.testType.id, 
+                    testCode: testCode,        
+                    testName: record.testType.description || testCode, 
+                    lastDate: record.createdAt,
+                    lastScore: record.finalScore, 
+                    totalCount: 0
+                };
+            }
+            
+            historyMap[testCode].totalCount++;
+        });
+        return Object.values(historyMap);
+    } catch (error) {
+        console.error("Lỗi lấy lịch sử test:", error);
+        return [];
+    }
+};
 const getStatistics = async (currentUser, type, dateParam, targetUserId) => {
     let userIdToQuery = currentUser.id;
     if (currentUser.role === 'ADMIN' && targetUserId) {
-        userIdToQuery = parseInt(targetUserId); 
+        userIdToQuery = parseInt(targetUserId);
     }
     let startDate = new Date();
     let endDate = new Date(); 
     const queryDate = dateParam ? new Date(dateParam) : new Date();
     let labels = [];
-    let chartData = [];
-
     if (type === 'day') {
-        startDate = new Date(queryDate);
-        startDate.setHours(0, 0, 0, 0);
-        endDate = new Date(queryDate);
-        endDate.setHours(23, 59, 59, 999);
-    } else if (type === 'week') {
-        const day = queryDate.getDay();
-        const diff = queryDate.getDate() - day + (day === 0 ? -6 : 1);
-        startDate = new Date(queryDate);
-        startDate.setDate(diff);
-        startDate.setHours(0, 0, 0, 0);
-        endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 6);
-        endDate.setHours(23, 59, 59, 999);
-        labels = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
-
+        startDate = new Date(queryDate); startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(queryDate); endDate.setHours(23, 59, 59, 999);
     } else if (type === 'month') {
         startDate = new Date(queryDate.getFullYear(), queryDate.getMonth(), 1);
-        endDate = new Date(queryDate.getFullYear(), queryDate.getMonth() + 1, 0);
-        endDate.setHours(23, 59, 59, 999);
+        endDate = new Date(queryDate.getFullYear(), queryDate.getMonth() + 1, 0); endDate.setHours(23, 59, 59, 999);
         const daysInMonth = endDate.getDate(); 
-        for (let i = 1; i <= daysInMonth; i++) {
-            labels.push(`${i}/${queryDate.getMonth() + 1}`);
-        }
-
-    } else if (type === 'quarter') {
-        const currentMonth = queryDate.getMonth();
-        const quarterIndex = Math.floor(currentMonth / 3);
-        const startMonth = quarterIndex * 3;
-        startDate = new Date(queryDate.getFullYear(), startMonth, 1);
-        endDate = new Date(queryDate.getFullYear(), startMonth + 3, 0, 23, 59, 59);
-        labels = [`Tháng ${startMonth + 1}`, `Tháng ${startMonth + 2}`, `Tháng ${startMonth + 3}`];
-
-    } else if (type === 'year') {
-        startDate = new Date(queryDate.getFullYear(), 0, 1);
-        endDate = new Date(queryDate.getFullYear(), 11, 31, 23, 59, 59);
-        labels = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
-    }
-
+        for (let i = 1; i <= daysInMonth; i++) labels.push(`${i}/${queryDate.getMonth() + 1}`);
+    } 
     const records = await prisma.emotionDiary.findMany({
         where: {
-            userId: userIdToQuery, 
+            userId: userIdToQuery,
             createdAt: { gte: startDate, lte: endDate }
         },
         orderBy: { createdAt: 'asc' }
     });
-
+    let chartData = [];
     if (type === 'day') {
         if (records.length > 0) {
-            records.forEach(record => {
-                labels.push(formatTime(new Date(record.createdAt)));
-                chartData.push(getMoodScore(record.mood));
+            records.forEach(r => {
+                labels.push(formatTime(new Date(r.createdAt)));
+                chartData.push(r.mood_score || getMoodScore(r.mood));
             });
-        } else {
-            labels = []; 
-            chartData = [];
         }
-
-    } else if (type === 'week') {
-        for (let i = 0; i < 7; i++) {
-            const currentDayDate = new Date(startDate);
-            currentDayDate.setDate(startDate.getDate() + i);
-            const subRecords = records.filter(r => {
-                const rDate = new Date(r.createdAt);
-                return rDate.getDate() === currentDayDate.getDate() &&
-                    rDate.getMonth() === currentDayDate.getMonth();
-            });
-            chartData.push(calculateAverage(subRecords));
-        }
-
     } else if (type === 'month') {
         const daysInMonth = endDate.getDate();
         for (let i = 1; i <= daysInMonth; i++) {
             const subRecords = records.filter(r => new Date(r.createdAt).getDate() === i);
             chartData.push(calculateAverage(subRecords));
         }
-
-    } else if (type === 'quarter') {
-        const startMonth = startDate.getMonth();
-        for (let i = 0; i < 3; i++) {
-            const targetMonth = startMonth + i;
-            const subRecords = records.filter(r => new Date(r.createdAt).getMonth() === targetMonth);
-            chartData.push(calculateAverage(subRecords));
-        }
-
-    } else if (type === 'year') {
-        for (let i = 0; i < 12; i++) {
-            const subRecords = records.filter(r => new Date(r.createdAt).getMonth() === i);
-            chartData.push(calculateAverage(subRecords));
-        }
     }
-
+    const testHistoryData = await getTestHistory(userIdToQuery);
     return {
-        chart: {
-            labels,
-            data: chartData
+        chart: { 
+            labels, 
+            data: chartData 
         },
-        distribution: calculateDistribution(records),
+        testHistory: testHistoryData, 
         summary: {
             total: records.length,
             average: calculateAverage(records),
-            period: {
-                start: startDate,
-                end: endDate
-            },
+            period: { start: startDate, end: endDate },
             viewingUserId: userIdToQuery 
         }
     };
