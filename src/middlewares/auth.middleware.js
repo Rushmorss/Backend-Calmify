@@ -50,5 +50,4 @@ export const restrictToAdmin = (req, res, next) => {
   next();
 };
 
-// Default export for backwards compatibility
 export default authMiddleware;
