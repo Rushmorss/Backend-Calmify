@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
-const authMiddleware = async (req, res, next) => {
+export const authMiddleware = async (req, res, next) => {
   try {
     let token = null;
     const authHeader = req.headers.authorization;
@@ -40,4 +40,15 @@ const authMiddleware = async (req, res, next) => {
     return res.status(401).json({success: false, message: "Invalid token" });
   }
 }; 
+export const restrictToAdmin = (req, res, next) => {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: "Bạn không có quyền thực hiện hành động này"
+    });
+  }
+  next();
+};
+
+// Default export for backwards compatibility
 export default authMiddleware;

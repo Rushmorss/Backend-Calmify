@@ -6,7 +6,6 @@ const authController = {
   register: async (req, res, next) => {
     try {
       const { email, password, age, gender, job } = req.body;
-
       if (!email || !password) {
         return res.status(400).json({ success: false, message: "Email và mật khẩu là bắt buộc" });
       }
@@ -20,7 +19,6 @@ const authController = {
             "Mật khẩu không đáp ứng yêu cầu (ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số, ký tự đặc biệt)",
         });
       }
-
       const ageInt = age ? parseInt(age, 10) : null;
       const user = await authService.register({ email, password, age: ageInt, gender, job });
       res.status(201).json({ success: true, message: "Đăng ký thành công", data: user });
@@ -34,13 +32,16 @@ const authController = {
   // sửa lại token ở đây.
   login: async (req, res, next) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, isAdminLogin } = req.body; 
       if (!email || !password) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Email và mật khẩu là bắt buộc" });
+        return res.status(400).json({ success: false, message: "Email và mật khẩu là bắt buộc" });
       }
-      const result = await authService.login({ email, password });
+      const requiredRole = isAdminLogin ? "admin" : "user";
+      const result = await authService.login({ 
+        email, 
+        password, 
+        requiredRole 
+      });
       res.json({
         success: true,
         message: "Đăng nhập thành công",
@@ -51,23 +52,20 @@ const authController = {
       res.status(401).json({
         success: false,
         message: err.message || "Sai email hoặc mật khẩu",
-      });
-    }
-  },
-
+    });
+  }
+},
  forgotPassword: async (req, res, next) => {
     try {
       console.log("ĐÃ VÀO CONTROLLER. req.body LÀ:", req.body); 
       const { email } = req.body;
       if (!email) return res.status(400).json({ success: false, message: "Vui lòng nhập email" });
-
       await authService.sendForgotOTP({ email });
       res.json({ success: true, message: "OTP đã được gửi tới email (nếu tài khoản tồn tại)" });
     } catch (err) {
       next(err);
     }
   },
-
  verifyOtp: async (req, res, next) => {
     try {
       const { email, otp } = req.body;
@@ -87,7 +85,6 @@ const authController = {
   resetPassword: async (req, res, next) => {
     try {
       const { email, resetToken, newPassword } = req.body;
-
       if (!email || !resetToken || !newPassword) {
         return res.status(400).json({
           success: false,
