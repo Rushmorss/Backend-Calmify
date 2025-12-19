@@ -4,30 +4,18 @@ const prisma = new PrismaClient();
 
 export const getTestById = async (req, res) => {
   try {
-
     const { id } = req.params; 
-
-    const testId = parseInt(id);
-
-    if (isNaN(testId)) {
-       return res.status(400).json({ message: "ID bài test không hợp lệ" });
-    }
-
     const testType = await prisma.testType.findUnique({
       where: { id: testId },
     });
-
     if (!testType) {
       return res.status(404).json({ message: "Không tìm thấy bài test này trong database" });
     }
-
     const testCode = testType.code;
-
     const scaleOptions = await prisma.testScale.findMany({
       where: { testCode: testCode },
       orderBy: { value: "asc" },
     });
-
     const optionsForFE = scaleOptions.map((opt) => ({
       id: opt.id,
       optionText: opt.label,

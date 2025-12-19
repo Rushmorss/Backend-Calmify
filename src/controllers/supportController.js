@@ -5,11 +5,19 @@ const getLocations = async (req, res) => {
     const { q } = req.query; 
     const locations = await supportService.getAllLocations(q);
     const types = await supportService.getSupportTypes(); 
-    res.status(200).json({
-      success: true,
-      data: locations,
-      types: types
-    });
+    res.status(200).json({ success: true, data: locations, types: types });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getLocationById = async (req, res) => {
+  try {
+    const location = await supportService.getLocationById(req.params.id);
+    if (!location) {
+      return res.status(404).json({ success: false, message: "Location not found" });
+    }
+    res.status(200).json({ success: true, data: location });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -44,6 +52,7 @@ const deleteLocation = async (req, res) => {
 
 export default {
     getLocations,
+    getLocationById, 
     createLocation,
     updateLocation,
     deleteLocation,

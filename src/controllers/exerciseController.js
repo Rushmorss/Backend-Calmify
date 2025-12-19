@@ -29,7 +29,6 @@ export const getExercise = async (req, res) => {
   }
 };
 
-// --- ADMIN API ---
 export const createCategory = async (req, res) => {
   try {
     const newCat = await exerciseService.createCategory(req.body);
@@ -82,4 +81,15 @@ export const deleteExercise = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
+};
+export const getAllExercisesAdmin = async (filters) => {
+  const { search, categoryId } = filters;
+  return await prisma.exercise.findMany({
+    where: {
+      title: search ? { contains: search } : undefined,
+      categoryId: categoryId ? parseInt(categoryId) : undefined,
+    },
+    include: { category: { select: { name: true } } },
+    orderBy: { createdAt: 'desc' }
+  });
 };

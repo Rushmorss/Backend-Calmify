@@ -1,23 +1,24 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 async function main() {
-  console.log('⏳ Đang nạp dữ liệu bài test...')
-
-  // --- 1. PHQ-9 ---
-  await prisma.testType.upsert({
-    where: { code: 'PHQ9' },
-    update: {},
-    create: {
+  console.log('⏳ Đang nạp dữ liệu bài test theo cấu trúc mới...');
+  await prisma.assessment.deleteMany({});
+  await prisma.question.deleteMany({});
+  await prisma.testScale.deleteMany({});
+  await prisma.testType.deleteMany({});
+  await prisma.testType.create({
+    data: {
       code: 'PHQ9',
+      title: 'Bảng câu hỏi sức khỏe bệnh nhân (PHQ-9)',
       description: 'Trong 2 tuần qua, bạn có thường xuyên bị quấy rầy bởi các vấn đề sau?',
       testScales: {
         create: [
-          { value: 0, label: 'Hầu như không' },
-          { value: 1, label: 'Một vài ngày' },
-          { value: 2, label: 'Hơn một nửa số thời gian' },
-          { value: 3, label: 'Gần như mỗi ngày' }
+          { label: 'Hầu như không' },
+          { label: 'Một vài ngày' },
+          { label: 'Hơn một nửa số thời gian' },
+          { label: 'Gần như mỗi ngày' }
         ]
       },
       questions: {
@@ -34,21 +35,19 @@ async function main() {
         ]
       }
     }
-  })
+  });
 
-  // --- 2. DASS-21 ---
-  await prisma.testType.upsert({
-    where: { code: 'DASS21' },
-    update: {},
-    create: {
+  await prisma.testType.create({
+    data: {
       code: 'DASS21',
+      title: 'Thang đo Trầm cảm - Lo âu - Stress (DASS-21)',
       description: 'Hãy đọc mỗi câu và chọn mức độ đúng với tình trạng của bạn trong tuần qua.',
       testScales: {
         create: [
-          { value: 0, label: 'Không đúng với tôi chút nào cả' },
-          { value: 1, label: 'Đúng với tôi phần nào, hoặc thỉnh thoảng mới đúng' },
-          { value: 2, label: 'Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng' },
-          { value: 3, label: 'Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng' }
+          { label: 'Không đúng với tôi chút nào cả' },
+          { label: 'Đúng với tôi phần nào, hoặc thỉnh thoảng mới đúng' },
+          { label: 'Đúng với tôi phần nhiều, hoặc phần lớn thời gian là đúng' },
+          { label: 'Hoàn toàn đúng với tôi, hoặc hầu hết thời gian là đúng' }
         ]
       },
       questions: {
@@ -77,80 +76,16 @@ async function main() {
         ]
       }
     }
-  })
-  
-  console.log('Nạp dữ liệu hoàn tất!')
+  });
+
+  console.log('✅ Nạp dữ liệu hoàn tất!');
 }
 
 main()
   .catch((e) => {
-    console.error(e)
-    process.exit(1)
+    console.error('❌ Lỗi Seeding:', e);
+    process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect()
-  })
-// prisma/seed.js
-// import { PrismaClient } from '@prisma/client';
-// const prisma = new PrismaClient();
-
-// async function main() {
-//   console.log('🌱 Đang tạo dữ liệu mẫu...');
-
-//   // Xóa dữ liệu cũ để tránh trùng lặp (tùy chọn)
-//   await prisma.exercise.deleteMany();
-//   await prisma.category.deleteMany();
-
-//   // 1. Tạo Category: THIỀN
-//   const thien = await prisma.category.create({
-//     data: {
-//       title: 'Thiền Chánh Niệm',
-//       description: 'Tìm lại sự bình yên nội tâm qua từng hơi thở.',
-//       thumbnail: 'https://img.freepik.com/free-photo/woman-meditating-nature_1098-1426.jpg',
-//       exercises: {
-//         create: [
-//           {
-//             title: 'Thiền 5 phút buổi sáng',
-//             description: 'Khởi động ngày mới đầy năng lượng.',
-//             instruction: '1. Ngồi thẳng lưng.\n2. Nhắm mắt nhẹ.\n3. Hít thở sâu.',
-//             videoUrl: 'https://www.youtube.com/embed/inpok4MKVLM',
-//             thumbnail: 'https://i.ytimg.com/vi/inpok4MKVLM/maxresdefault.jpg'
-//           },
-//           {
-//             title: 'Thiền buông thư',
-//             description: 'Giúp thư giãn toàn thân trước khi ngủ.',
-//             instruction: 'Nằm ngửa thoải mái, thả lỏng từng phần cơ thể.',
-//             videoUrl: 'https://www.youtube.com/embed/2OEL4P1Rz04',
-//             thumbnail: 'https://img.freepik.com/free-photo/sleep-relax_1098-1234.jpg'
-//           }
-//         ]
-//       }
-//     }
-//   });
-
-//   // 2. Tạo Category: YOGA
-//   await prisma.category.create({
-//     data: {
-//       title: 'Yoga Trị Liệu',
-//       description: 'Cải thiện sức khỏe thể chất và tinh thần.',
-//       thumbnail: 'https://img.freepik.com/free-vector/yoga-position_23-2148154946.jpg',
-//       exercises: {
-//         create: [
-//           {
-//             title: 'Yoga giảm đau lưng',
-//             description: 'Bài tập cho dân văn phòng.',
-//             instruction: 'Thực hiện nhẹ nhàng, không cố quá sức.',
-//             videoUrl: 'https://www.youtube.com/embed/LiUnFJ8PdbQ',
-//             thumbnail: 'https://i.ytimg.com/vi/LiUnFJ8PdbQ/maxresdefault.jpg'
-//           }
-//         ]
-//       }
-//     }
-//   });
-
-//   console.log('✅ Đã tạo xong dữ liệu mẫu!');
-// }
-
-// main()
-//   .catch(e => console.error(e))
-//   .finally(async () => await prisma.$disconnect());
+    await prisma.$disconnect();
+  });

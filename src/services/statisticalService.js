@@ -55,54 +55,32 @@ const getStatistics = async (currentUser, type, dateParam, targetUserId) => {
         userIdToQuery = parseInt(targetUserId);
     }
     let startDate = new Date();
-    let endDate = new Date(); 
+    let endDate = new Date();
     const queryDate = dateParam ? new Date(dateParam) : new Date();
     let labels = [];
-    if (type === 'day') {
-        startDate = new Date(queryDate); startDate.setHours(0, 0, 0, 0);
-        endDate = new Date(queryDate); endDate.setHours(23, 59, 59, 999);
-    } else if (type === 'month') {
-        startDate = new Date(queryDate.getFullYear(), queryDate.getMonth(), 1);
-        endDate = new Date(queryDate.getFullYear(), queryDate.getMonth() + 1, 0); endDate.setHours(23, 59, 59, 999);
-        const daysInMonth = endDate.getDate(); 
-        for (let i = 1; i <= daysInMonth; i++) labels.push(`${i}/${queryDate.getMonth() + 1}`);
-    } 
-    const records = await prisma.emotionDiary.findMany({
-        where: {
-            userId: userIdToQuery,
-            createdAt: { gte: startDate, lte: endDate }
-        },
-        orderBy: { createdAt: 'asc' }
-    });
     let chartData = [];
     if (type === 'day') {
-        if (records.length > 0) {
-            records.forEach(r => {
-                labels.push(formatTime(new Date(r.createdAt)));
-                chartData.push(r.mood_score || getMoodScore(r.mood));
-            });
-        }
     } else if (type === 'month') {
-        const daysInMonth = endDate.getDate();
-        for (let i = 1; i <= daysInMonth; i++) {
-            const subRecords = records.filter(r => new Date(r.createdAt).getDate() === i);
-            chartData.push(calculateAverage(subRecords));
+    } else if (type === 'year') {
+        startDate = new Date(queryDate.getFullYear(), 0, 1);
+        endDate = new Date(queryDate.getFullYear(), 11, 31, 23, 59, 59);
+        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const records = await prisma.emotionDiary.findMany({
+            where: { userId: userIdToQuery, createdAt: { gte: startDate, lte: endDate } }
+        });
+        for (let m = 0; m < 12; m++) {
+            const monthRecords = records.filter(r => new Date(r.createdAt).getMonth() === m);
+            chartData.push(calculateAverage(monthRecords));
         }
     }
-    const testHistoryData = await getTestHistory(userIdToQuery);
-    return {
-        chart: { 
-            labels, 
-            data: chartData 
-        },
-        testHistory: testHistoryData, 
-        summary: {
-            total: records.length,
-            average: calculateAverage(records),
-            period: { start: startDate, end: endDate },
-            viewingUserId: userIdToQuery 
-        }
-    };
+};
+
+const getAdminOverview = async () => {
+    const [totalUsers, totalTests] = await Promise.all([
+        prisma.user.count(),
+        prisma.assessment.count()
+    ]);
+    return { totalUsers, totalTests };
 };
 
 export default {

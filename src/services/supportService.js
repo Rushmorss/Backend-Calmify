@@ -14,12 +14,15 @@ const getAllLocations = async (keyword) => {
 
   return await prisma.supportLocation.findMany({
     where: whereClause,
-    include: {
-      supportType: true, 
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
+    include: { supportType: true },
+    orderBy: { createdAt: 'desc' },
+  });
+};
+
+const getLocationById = async (id) => {
+  return await prisma.supportLocation.findUnique({
+    where: { id: parseInt(id) },
+    include: { supportType: true },
   });
 };
 
@@ -59,7 +62,8 @@ const deleteLocation = async (id) => {
 };
 
 export default {
-    getAllLocations,    
+    getAllLocations,
+    getLocationById, 
     getSupportTypes,
     createLocation,
     updateLocation,

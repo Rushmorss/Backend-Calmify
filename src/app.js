@@ -11,6 +11,7 @@ import statisticalRoutes from "./routes/statisticalRoutes.js";
 import supportRoutes from "./routes/supportRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";  
+import testRoutes from "./routes/testRoutes.js";  
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,7 +23,7 @@ app.use(
 );
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -46,6 +47,7 @@ app.use("/uploads", express.static('uploads'));
 app.use("/api/supports", supportRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/chats", chatRoutes);
+app.use("/api/tests", testRoutes);
 app.use(express.static(path.join(__dirname, "../../frontend/dist")));
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../../frontend/dist/index.html"));

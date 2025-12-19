@@ -196,7 +196,7 @@ model SettingMail {
   mailType    String   @unique @map("mail_type") @db.VarChar(50) 
   subject     String   @db.VarChar(255)
   content     String   @db.Text 
-  description String?  @db.VarChar(255)
+  description String?  @db.VarChar(2000)
   updatedAt   DateTime @updatedAt @map("updated_at")
   @@map("setting_mails")
 }

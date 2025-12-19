@@ -115,7 +115,69 @@ const authController = {
       next(err);
     }
   },
-  
+  getAllUsers: async (req, res, next) => {
+    try {
+      const { page = 1, limit = 10, search = "" } = req.query;
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+
+      const where = search ? {
+        OR: [
+          { email: { contains: search, mode: 'insensitive' } },
+          { id: { contains: search } }
+        ]
+      } : {};
+      const [users, total] = await Promise.all([
+        prisma.user.findMany({
+          where,
+          skip,
+          take: parseInt(limit),
+          orderBy: { createdAt: "desc" },
+          select: { id: true, email: true, age: true, gender: true, job: true, role: true, createdAt: true }
+        }),
+        prisma.user.count({ where })
+      ]);
+      res.json({
+        success: true,
+        data: users,
+        pagination: { total, page: parseInt(page), limit: parseInt(limit) }
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+  getUserDetail: async (req, res, next) => {
+    try {
+      const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+      if (!user) return res.status(404).json({ success: false, message: "Không tìm thấy" });
+      res.json({ success: true, data: user });
+    } catch (err) {
+      next(err);
+    }
+  },
+  deactivateUser: async (req, res, next) => {
+    try {
+      await prisma.user.update({
+        where: { id: req.params.id },
+        data: { isActive: false } 
+      });
+      res.json({ success: true, message: "Đã vô hiệu hóa thành công" });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  updateProfile: async (req, res, next) => {
+    try {
+      const { age, gender, job } = req.body;
+      const updated = await prisma.user.update({
+        where: { id: req.user.id }, 
+        data: { age: age ? parseInt(age) : undefined, gender, job }
+      });
+      res.json({ success: true, message: "Cập nhật thành công", data: updated });
+    } catch (err) {
+      next(err);
+    }
+  }
 };
 
 export default authController;
