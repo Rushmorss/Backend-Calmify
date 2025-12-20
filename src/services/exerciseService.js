@@ -8,7 +8,7 @@ export const getAllCategories = async () => {
 
 export const getCategoryWithExercises = async (categoryId) => {
   return await prisma.exerciseCategory.findUnique({
-    where: { id: parseInt(categoryId) },
+    where: { id: categoryId },
     include: {
       exercises: {
         select: { id: true, title: true, thumbnail: true, videoUrl: true, description: true }
@@ -18,7 +18,7 @@ export const getCategoryWithExercises = async (categoryId) => {
 };
 
 export const getExerciseDetail = async (exerciseId) => {
-  const id = parseInt(exerciseId);
+  const id = exerciseId;
   const currentExercise = await prisma.exercise.findUnique({
     where: { id: id },
     include: { category: true }
@@ -45,14 +45,14 @@ export const createCategory = async (data) => {
 
 export const updateCategory = async (id, data) => {
   return await prisma.exerciseCategory.update({
-    where: { id: parseInt(id) },
+    where: { id },
     data
   });
 };
 
 export const deleteCategory = async (id) => {
   return await prisma.exerciseCategory.delete({
-    where: { id: parseInt(id) }
+    where: { id }
   });
 };
 
@@ -64,21 +64,21 @@ export const createExercise = async (data) => {
       instruction: data.instruction,
       videoUrl: data.videoUrl,
       thumbnail: data.thumbnail,
-      categoryId: parseInt(data.categoryId)
+      categoryId: data.categoryId
     }
   });
 };
 
 export const updateExercise = async (id, data) => {
   return await prisma.exercise.update({
-    where: { id: parseInt(id) },
+    where: { id },
     data
   });
 };
 
 export const deleteExercise = async (id) => {
   return await prisma.exercise.delete({
-    where: { id: parseInt(id) }
+    where: { id }
   });
 };
 
@@ -86,7 +86,7 @@ export const getAllExercisesForAdmin = async ({ search, categoryId }) => {
   return await prisma.exercise.findMany({
     where: {
       title: search ? { contains: search } : undefined,
-      categoryId: categoryId ? parseInt(categoryId) : undefined,
+      categoryId: categoryId ? categoryId : undefined,
     },
     include: { category: { select: { title: true } } },
     orderBy: { createdAt: 'desc' }
