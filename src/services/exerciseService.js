@@ -88,7 +88,7 @@ export const getAllExercisesForAdmin = async ({ search, categoryId }) => {
       title: search ? { contains: search } : undefined,
       categoryId: categoryId ? parseInt(categoryId) : undefined,
     },
-    include: { category: { select: { name: true } } },
+    include: { category: { select: { title: true } } },
     orderBy: { createdAt: 'desc' }
   });
 };
