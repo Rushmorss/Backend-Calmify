@@ -11,10 +11,13 @@ const createSupportSchema = Joi.object({
   }),
   address: Joi.string().max(500).allow('', null),
   note: Joi.string().allow('', null),
-  typeId: Joi.number().integer().required().messages({
-    'number.base': 'Loại hỗ trợ (TypeID) phải là số',
-    'any.required': 'Vui lòng chọn loại hỗ trợ'
-  })
+  typeId: Joi.alternatives()
+    .try(Joi.number().integer(), Joi.string().uuid(), Joi.string())
+    .required()
+    .messages({
+      'alternatives.match': 'Loại hỗ trợ (TypeID) phải là một ID hợp lệ',
+      'any.required': 'Vui lòng chọn loại hỗ trợ'
+    })
 });
 
 const validateCreateSupport = (req, res, next) => {

@@ -7,29 +7,33 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// --- USER MANAGEMENT ---
 model User {
-  id               String         @id @default(uuid()) @db.VarChar(36)
-  email            String         @unique @db.VarChar(100)
-  password         String         @db.VarChar(255)
-  nickname         String?        @db.VarChar(50)
-  avatarUrl        String?        @map("avatar_url") @db.VarChar(500)
+  id               String            @id @default(uuid()) @db.VarChar(36)
+  email            String            @unique @db.VarChar(100)
+  password         String            @db.VarChar(255)
+  nickname         String?           @db.VarChar(50)
+  avatarUrl        String?           @map("avatar_url") @db.VarChar(500)
   age              Int?
-  gender           String?        @db.VarChar(20)
-  job              String?        @db.VarChar(255)
-  role             String?        @default("user") @db.VarChar(50)
-  status           String         @default("active") @db.VarChar(20) 
-  otp              String?        @db.VarChar(20)
+  gender           String?           @db.VarChar(20)
+  job              String?           @db.VarChar(255)
+  role             String?           @default("user") @db.VarChar(50)
+  status           String            @default("active") @db.VarChar(20) 
+  otp              String?           @db.VarChar(20)
   otpExpiry        DateTime?
   resetToken       String?
   resetTokenExpiry DateTime?
-  createdAt        DateTime       @default(now()) @map("created_at")
-  updatedAt        DateTime       @updatedAt @map("updated_at")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  
   emotionDiaries   EmotionDiary[]
   assessments      Assessment[]
   chatSessions     ChatSession[]
+  
   @@map("users")
 }
 
+// --- EMOTION DIARY ---
 model EmotionIcon {
   id           String         @id @default(uuid()) @db.VarChar(36)
   name         String         @db.VarChar(100)
@@ -49,16 +53,19 @@ model EmotionDiary {
   diaryDate DateTime     @map("diary_date") @db.Date
   createdAt DateTime     @default(now()) @map("created_at")
   updatedAt DateTime     @updatedAt @map("updated_at")
+  
   user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   icon      EmotionIcon? @relation(fields: [iconId], references: [id], onDelete: SetNull)
   @@map("emotion_diaries")
 }
 
+// --- PSYCHOLOGICAL TESTS ---
 model TestType {
   id          String       @id @default(uuid()) @db.VarChar(36)
   code        String       @unique @db.VarChar(50)
   title       String       @db.VarChar(255)
   description String?      @db.Text
+  
   testScales  TestScale[]
   questions   Question[]
   assessments Assessment[]
@@ -66,20 +73,22 @@ model TestType {
 }
 
 model TestScale {
-  id        String   @id @default(uuid()) @db.VarChar(36)
-  testCode  String   @map("test_code") @db.VarChar(50)
-  label     String?  @db.VarChar(255) 
-  testType  TestType @relation(fields: [testCode], references: [code], onDelete: Cascade)
+  id       String   @id @default(uuid()) @db.VarChar(36)
+  testCode String   @map("test_code") @db.VarChar(50)
+  label    String?  @db.VarChar(255) 
+  
+  testType TestType @relation(fields: [testCode], references: [code], onDelete: Cascade)
   @@map("test_scales")
 }
 
 model Question {
   id            String   @id @default(uuid()) @db.VarChar(36)
   content       String   @db.Text
-  options       Json?    
-  questionOrder Int      @map("question_order")
+  options       Json?
+questionOrder Int      @map("question_order")
   testCode      String   @map("test_code") @db.VarChar(50)
   category      String?  @db.VarChar(255)
+  
   testType      TestType @relation(fields: [testCode], references: [code], onDelete: Cascade)
   @@map("questions")
 }
@@ -92,19 +101,22 @@ model Assessment {
   severity     String?  
   resultDetail Json?    @map("result_detail") 
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   testType     TestType @relation(fields: [testTypeCode], references: [code])
   @@map("assessments")
 }
 
+// --- AI CHATBOT ---
 model ChatSession {
-  sessionId      String        @id @default(uuid()) @map("session_id") @db.VarChar(36)
-  userId         String        @map("user_id") @db.VarChar(36)
-  title          String?       @db.VarChar(255)
-  sessionSummary String?       @map("session_summary") @db.Text
-  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt      DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId      String            @id @default(uuid()) @map("session_id") @db.VarChar(36)
+  userId         String            @map("user_id") @db.VarChar(36)
+  title          String?           @db.VarChar(255)
+  sessionSummary String?           @map("session_summary") @db.Text
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt      DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   chatMessages   ChatMessage[]
   clinicalInsights ClinicalInsight[]
   @@map("chat_sessions")
@@ -124,12 +136,14 @@ enum MessageType {
 }
 
 model ChatMessage {
-  mmessageId  Int          @id @default(autoincrement()) @map("message_id")
+  // SỬA: Đã sửa typo mmessageId -> messageId
+  messageId   Int          @id @default(autoincrement()) @map("message_id")
   sessionId   String       @map("session_id") @db.VarChar(36)
   sender      Sender
   content     String       @db.Text
   messageType MessageType? @default(TEXT) @map("message_type")
   createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamp(0)
+  
   chatSession ChatSession  @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
   @@map("chat_messages")
 } 
@@ -138,59 +152,69 @@ model ClinicalInsight {
   id               String      @id @default(uuid()) @db.VarChar(36)
   sessionId        String      @map("session_id") @db.VarChar(36)
   detectedSymptoms Json?       @map("detected_symptoms") 
-  moodAssessment   String?     @map("mood_assessment")   
+  moodAssessment   String?     @map("mood_assessment")    
   clinicalNote     String?     @map("clinical_note") @db.Text 
   createdAt        DateTime    @default(now()) @map("created_at")
+  
   session          ChatSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
   @@map("clinical_insights")
 }
 
+// --- EXERCISES & MEDITATION ---
 model ExerciseCategory {
   id          String     @id @default(uuid()) @db.VarChar(36)
   title       String     @db.VarChar(255)
   description String?    @db.Text
   thumbnail   String?    @db.VarChar(500)
-  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamp(0)
+createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamp(0)
+  
   exercises   Exercise[]
   @@map("exercise_categories")
 }
 
 model Exercise {
-  id          String   @id @default(uuid()) @db.VarChar(36)
-  title       String   @db.VarChar(255)
-  description String?  @db.Text
-  instruction String?  @db.Text
-  videoUrl    String   @map("video_url") @db.VarChar(500)
-  thumbnail   String?  @db.VarChar(500)
-  categoryId  String   @map("category_id") @db.VarChar(36)
-  order       Int      @default(0) 
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  id          String           @id @default(uuid()) @db.VarChar(36)
+  title       String           @db.VarChar(255)
+  description String?          @db.Text
+  instruction String?          @db.Text
+  videoUrl    String           @map("video_url") @db.VarChar(500)
+  thumbnail   String?          @db.VarChar(500)
+  categoryId  String           @map("category_id") @db.VarChar(36)
+  order       Int              @default(0) 
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamp(0)
+  
   category    ExerciseCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   @@map("exercises")
 }
 
+// --- SUPPORT LOCATIONS (HOTLINES) ---
 model SupportType {
-  id               String            @id @default(uuid()) @db.VarChar(36)
-  name             String            @db.VarChar(100)
-  code             String            @unique @db.VarChar(50)
-  description      String?           @db.Text
+  id          String            @id @default(uuid()) @db.VarChar(36)
+  name        String            @db.VarChar(100)
+  code        String            @unique @db.VarChar(50)
+  // SỬA: Đã thêm cột image để tránh lỗi ở Service
+  image       String?           @db.VarChar(500) 
+  description String?           @db.Text
+  
   supportLocations SupportLocation[]
   @@map("support_types")
 }
 
 model SupportLocation {
-  id          String   @id @default(uuid()) @db.VarChar(36)
-  name        String   @db.VarChar(255)
-  phoneNumber String?  @map("phone_number") @db.VarChar(50)
-  address     String?  @db.VarChar(500)
-  note        String?  @db.Text
-  typeId      String   @map("type_id") @db.VarChar(36)
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(0)
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  id          String      @id @default(uuid()) @db.VarChar(36)
+  name        String      @db.VarChar(255)
+  phoneNumber String?     @map("phone_number") @db.VarChar(50)
+  address     String?     @db.VarChar(500)
+  note        String?     @db.Text
+  typeId      String      @map("type_id") @db.VarChar(36)
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  
   supportType SupportType @relation(fields: [typeId], references: [id])
   @@map("support_locations")
 }
 
+// --- SETTINGS ---
 model SettingMail {
   id          String   @id @default(uuid()) @db.VarChar(36)
   mailType    String   @unique @map("mail_type") @db.VarChar(50) 

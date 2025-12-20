@@ -11,5 +11,5 @@ router.get('/:id', authMiddleware, supportController.getLocationById);
 router.post('/', authMiddleware, supportValidation.validateCreateSupport, supportController.createLocation);
 router.put('/:id', authMiddleware, supportValidation.validateCreateSupport, supportController.updateLocation);
 router.delete('/:id', authMiddleware, supportController.deleteLocation);
-
+router.get('/admin/all', authMiddleware, supportController.adminGetLocations);
 export default router;

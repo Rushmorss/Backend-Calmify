@@ -3,7 +3,6 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 const analyzeResult = (testCode, score) => {
-  // Logic cho PHQ-9
   if (testCode === "PHQ9") {
     if (score <= 4)
       return {
@@ -36,9 +35,7 @@ const analyzeResult = (testCode, score) => {
     };
   }
 
-  // Logic cho DASS-21
   if (testCode === "DASS21") {
-    // Logic đơn giản hóa cho DASS-21 dựa trên tổng điểm
     if (score <= 20)
       return {
         severity: "Normal",
@@ -65,20 +62,13 @@ const analyzeResult = (testCode, score) => {
   };
 };
 
-// =======================================================
-// 2. HÀM LƯU KẾT QUẢ VÀO DB (Đã đồng bộ với Schema)
-// =======================================================
 export const saveTestResult = async (userId, testCode, answers) => {
-  // 1. Tính tổng điểm (Bây giờ answers đã là Array nên reduce mới chạy được)
   const totalScore = answers.reduce(
     (sum, item) => sum + parseInt(item.score),
     0
   );
 
-  // 2. Phân tích kết quả
   const analysis = analyzeResult(testCode, totalScore);
-
-  // 3. Đóng gói thông tin phụ vào JSON
   const resultDetailJson = {
     severity: analysis.severity,
     description: analysis.resultDetail,
@@ -88,19 +78,16 @@ export const saveTestResult = async (userId, testCode, answers) => {
 
   try {
     console.log("💾 Đang lưu vào DB...");
-
-    // 4. Lưu vào Database (Mapping đúng tên cột)
     const resultRecord = await prisma.assessment.create({
       data: {
-        userId: userId, // Cột user_id
-        testTypeCode: testCode, // Cột test_type
-        finalScore: totalScore, // Cột final_score
-        resultDetail: resultDetailJson, // Cột result_detail (JSON)
+        userId: userId, 
+        testTypeCode: testCode, 
+        finalScore: totalScore, 
+        resultDetail: resultDetailJson, 
       },
     });
 
     console.log("✅ Lưu thành công ID:", resultRecord.id);
-
     return {
       resultId: resultRecord.id,
       totalScore: totalScore,
@@ -112,4 +99,106 @@ export const saveTestResult = async (userId, testCode, answers) => {
     console.error("❌ Lỗi Prisma:", err);
     throw err;
   }
+};
+
+export const createFullTest = async (data) => {
+  const { code, title, description, questions, scales } = data;
+  return await prisma.$transaction(async (tx) => {
+    const newTest = await tx.testType.create({
+      data: {
+        code,
+        title,
+        description,
+        questions: {
+          create: questions.map((q, index) => ({
+            content: q.questionText,
+            category: q.category || "General",
+            questionOrder: index + 1,
+          })),
+        },
+        testScales: {
+          create: scales.map((s, index) => ({
+            label: s.label,
+          })),
+        },
+      },
+      include: {
+        questions: true,
+        testScales: true,
+      },
+    });
+    return newTest;
+  });
+};
+
+export const updateFullTest = async (id, data) => {
+  const { code, title, description, questions, scales } = data;
+  return await prisma.$transaction(async (tx) => {
+    const identifier = String(id);
+    let existing = await tx.testType.findFirst({
+      where: { OR: [{ id: identifier }, { code: identifier }] },
+    });
+    if (!existing) {
+      const rows = await tx.$queryRaw`
+        SELECT * FROM test_types WHERE id = ${id} OR id = ${identifier} OR code = ${identifier} LIMIT 1
+      `;
+      if (Array.isArray(rows) && rows.length > 0) {
+        existing = rows[0];
+      }
+    }
+    if (!existing) throw new Error("Test not found");
+    const prevCode = existing.code;
+    const updatedTest = await tx.testType.update({
+      where: { code: prevCode },
+      data: {
+        code,
+        title,
+        description,
+      },
+    });
+
+    if (questions && questions.length > 0) {
+      await tx.question.deleteMany({ where: { testCode: prevCode } });
+      await tx.question.createMany({
+        data: questions.map((q, index) => ({
+          testCode: code,
+          content: q.questionText,
+          category: q.category || "General",
+          questionOrder: index + 1,
+        })),
+      });
+    }
+
+    if (scales && scales.length > 0) {
+      await tx.testScale.deleteMany({ where: { testCode: prevCode } });
+      await tx.testScale.createMany({
+        data: scales.map((s) => ({
+          testCode: code,
+          label: s.label,
+        })),
+      });
+    }
+
+    return updatedTest;
+  });
+};
+
+export const deleteTest = async (id) => {
+  const identifier = String(id);
+  let test = await prisma.testType.findFirst({ where: { OR: [{ id: identifier }, { code: identifier }] } });
+  if (!test) {
+    const rows = await prisma.$queryRaw`
+      SELECT * FROM test_types WHERE id = ${id} OR id = ${identifier} OR code = ${identifier} LIMIT 1
+    `;
+    if (Array.isArray(rows) && rows.length > 0) test = rows[0];
+  }
+
+  if (!test) throw new Error("Test not found");
+  const code = test.code;
+  return await prisma.$transaction([
+    prisma.question.deleteMany({ where: { testCode: code } }),
+    prisma.testScale.deleteMany({ where: { testCode: code } }),
+    prisma.assessment.deleteMany({ where: { testTypeCode: code } }),
+    prisma.testType.delete({ where: { code } }),
+  ]);
 };

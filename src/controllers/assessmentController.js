@@ -8,18 +8,16 @@ const { userId, testCode, answers } = req.body;
  let isGuest = true;
 
  if (userId) {
- const parsedUserId = parseInt(userId, 10);
- 
- if (!isNaN(parsedUserId) && parsedUserId > 0) {
- finalUserId = parsedUserId;
- isGuest = false;
- }
- }
- 
- if (!finalUserId) {
- finalUserId = 1; 
- isGuest = true;
- }
+      const asString = String(userId).trim();
+      if (asString) {
+        finalUserId = asString;
+        isGuest = false;
+      }
+    }
+    if (!finalUserId) {
+      finalUserId = '1';
+      isGuest = true;
+    }
  const answersArray = Object.values(answers);
  const scoreValue = answersArray.reduce((acc, curr) => acc + (parseInt(curr) || 0), 0);
  let severity = 'Không/Tối thiểu';

@@ -15,7 +15,7 @@ export const getUserAssessmentContext = async (userId) => {
       return "Người dùng chưa thực hiện bài test tâm lý nào.";
     }
     let contextString = `
-      - Loại bài test: ${assessment.testType.name} (${assessment.testType.code})
+      - Loại bài test: ${assessment.testType.title} (${assessment.testType.code})
       - Ngày làm: ${new Date(assessment.createdAt).toLocaleDateString("vi-VN")}
       - Tổng điểm: ${assessment.finalScore}
       - Mức độ đánh giá sơ bộ: ${assessment.severity || "Chưa xác định"}

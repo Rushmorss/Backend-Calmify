@@ -1,102 +1,202 @@
 import prisma from "../config/prismaClient.js";
 import { sendEmail } from "../utils/mailer.js";
 const getMoodScore = (moodString) => {
-    const mapping = { 'Rất vui': 5, 'Vui': 4, 'Bình thường': 3, 'Buồn': 2, 'Rất buồn': 1 };
-    return mapping[moodString] || 3;
+  const mapping = {
+    "Rất vui": 5,
+    Vui: 4,
+    "Bình thường": 3,
+    Buồn: 2,
+    "Rất buồn": 1,
+  };
+  return mapping[moodString] || 3;
 };
 
 const calculateAverage = (records) => {
-    if (!records || records.length === 0) return 0;
-    const total = records.reduce((sum, record) => sum + (record.mood_score || getMoodScore(record.mood)), 0);
-    return parseFloat((total / records.length).toFixed(1));
-};
-
-const formatTime = (dateObj) => {
-    const h = dateObj.getHours().toString().padStart(2, '0');
-    const m = dateObj.getMinutes().toString().padStart(2, '0');
-    return `${h}:${m}`;
-};
-
-const getTestHistory = async (userId) => {
-    try {
-        const assessments = await prisma.assessment.findMany({
-            where: { userId: userId },
-            include: { 
-                testType: true 
-            },
-            orderBy: { createdAt: 'desc' }
-        });
-        const historyMap = {};
-        assessments.forEach(record => {
-            const testCode = record.testTypeCode; 
-            
-            if (!historyMap[testCode]) {
-                historyMap[testCode] = {
-                    testId: record.testType.id, 
-                    testCode: testCode,        
-                    testName: record.testType.description || testCode, 
-                    lastDate: record.createdAt,
-                    lastScore: record.finalScore, 
-                    totalCount: 0
-                };
-            }
-            
-            historyMap[testCode].totalCount++;
-        });
-        return Object.values(historyMap);
-    } catch (error) {
-        console.error("Lỗi lấy lịch sử test:", error);
-        return [];
-    }
+  if (!records || records.length === 0) return 0;
+  const total = records.reduce(
+    (sum, record) =>
+      sum +
+      (record.moodScore !== null
+        ? record.moodScore
+        : getMoodScore(record.mood)),
+    0
+  );
+  return parseFloat((total / records.length).toFixed(1));
 };
 const getStatistics = async (currentUser, type, dateParam, targetUserId) => {
-    let userIdToQuery = currentUser.id;
-    if (currentUser.role === 'ADMIN' && targetUserId) {
-        userIdToQuery = parseInt(targetUserId);
-    }
-    let startDate = new Date();
-    let endDate = new Date();
-    const queryDate = dateParam ? new Date(dateParam) : new Date();
-    let labels = [];
-    let chartData = [];
-    if (type === 'day') {
-    } else if (type === 'month') {
-    } else if (type === 'year') {
-        startDate = new Date(queryDate.getFullYear(), 0, 1);
-        endDate = new Date(queryDate.getFullYear(), 11, 31, 23, 59, 59);
-        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const records = await prisma.emotionDiary.findMany({
-            where: { userId: userIdToQuery, createdAt: { gte: startDate, lte: endDate } }
+  let userIdToQuery = currentUser.id;
+  if (String(currentUser.role).toUpperCase() === "ADMIN" && targetUserId) {
+    userIdToQuery = targetUserId;
+  }
+  const queryDate = dateParam ? new Date(dateParam) : new Date();
+  let startDate = new Date();
+  let endDate = new Date();
+  let labels = [];
+  let chartData = [];
+  try {
+    if (type === "day") {
+      startDate = new Date(queryDate);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(queryDate);
+      endDate.setHours(23, 59, 59, 999);
+
+      const records = await prisma.emotionDiary.findMany({
+        where: {
+          userId: userIdToQuery,
+          createdAt: { gte: startDate, lte: endDate },
+        },
+        orderBy: { createdAt: "asc" },
+      });
+
+      records.forEach((record) => {
+        const h = new Date(record.createdAt)
+          .getHours()
+          .toString()
+          .padStart(2, "0");
+        const m = new Date(record.createdAt)
+          .getMinutes()
+          .toString()
+          .padStart(2, "0");
+        labels.push(`${h}:${m}`);
+        chartData.push(
+          record.moodScore !== null
+            ? record.moodScore
+            : getMoodScore(record.mood)
+        );
+      });
+    } else if (type === "week") {
+      const dayOfWeek = queryDate.getDay();
+      const diffToMonday =
+        queryDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+      startDate = new Date(queryDate);
+      startDate.setDate(diffToMonday);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
+      endDate.setHours(23, 59, 59, 999);
+
+      const records = await prisma.emotionDiary.findMany({
+        where: {
+          userId: userIdToQuery,
+          createdAt: { gte: startDate, lte: endDate },
+        },
+      });
+
+      const weekDays = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+      for (let i = 0; i < 7; i++) {
+        const currentDay = new Date(startDate);
+        currentDay.setDate(startDate.getDate() + i);
+        const dayRecords = records.filter((r) => {
+          const rDate = new Date(r.createdAt);
+          return (
+            rDate.getDate() === currentDay.getDate() &&
+            rDate.getMonth() === currentDay.getMonth()
+          );
         });
-        for (let m = 0; m < 12; m++) {
-            const monthRecords = records.filter(r => new Date(r.createdAt).getMonth() === m);
-            chartData.push(calculateAverage(monthRecords));
-        }
+        labels.push(weekDays[i]);
+        chartData.push(calculateAverage(dayRecords));
+      }
+    } else if (type === "month") {
+      startDate = new Date(queryDate.getFullYear(), queryDate.getMonth(), 1);
+      endDate = new Date(
+        queryDate.getFullYear(),
+        queryDate.getMonth() + 1,
+        0,
+        23,
+        59,
+        59
+      );
+
+      const records = await prisma.emotionDiary.findMany({
+        where: {
+          userId: userIdToQuery,
+          createdAt: { gte: startDate, lte: endDate },
+        },
+      });
+
+      const daysInMonth = endDate.getDate();
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dayRecords = records.filter(
+          (r) => new Date(r.createdAt).getDate() === d
+        );
+        labels.push(`${d}/${queryDate.getMonth() + 1}`);
+        chartData.push(calculateAverage(dayRecords));
+      }
     }
+    const testHistory = await getTestHistory(userIdToQuery);
+    return {
+      chart: { labels, data: chartData },
+      testHistory: testHistory,
+      summary: { viewingUserId: userIdToQuery },
+    };
+  } catch (error) {
+    console.error("Lỗi getStatistics:", error);
+    throw new Error("Không thể lấy dữ liệu thống kê.");
+  }
+};
+const getTestHistory = async (userId) => {
+  try {
+    const assessments = await prisma.assessment.findMany({
+      where: { userId: userId },
+      include: { testType: true },
+      orderBy: { createdAt: "asc" },
+    });
+    const historyMap = {};
+    assessments.forEach((record) => {
+      const testCode = record.testTypeCode || "UNKNOWN";
+      if (!historyMap[testCode]) {
+        historyMap[testCode] = {
+          testName: record.testType?.name || record.testTypeCode, 
+          attempts: [], 
+        };
+      }
+      historyMap[testCode].attempts.push({
+        id: record.id,
+        date: record.createdAt,
+        score: record.finalScore,
+      });
+    });
+    const result = Object.values(historyMap).map((test) => {
+      const totalCount = test.attempts.length;
+      const lastAttempt = test.attempts[totalCount - 1]; 
+
+      return {
+        ...test,
+        totalCount: totalCount,
+        lastDate: lastAttempt ? lastAttempt.date : null, 
+        lastScore: lastAttempt ? lastAttempt.score : null, 
+      };
+    });
+    return result.sort((a, b) => new Date(b.lastDate) - new Date(a.lastDate));
+  } catch (error) {
+    console.error("Lỗi lấy lịch sử test:", error);
+    return [];
+  }
+};
+const getAdminOverview = async () => {
+  const [totalUsers, totalTests] = await Promise.all([
+    prisma.user.count(),
+    prisma.assessment.count(),
+  ]);
+  return { totalUsers, totalTests };
 };
 
-const getAdminOverview = async () => {
-    const [totalUsers, totalTests] = await Promise.all([
-        prisma.user.count(),
-        prisma.assessment.count()
-    ]);
-    return { totalUsers, totalTests };
-};
 const adminStatistics = {
   getGlobalEmotionStats: async () => {
     const stats = await prisma.emotionDiary.groupBy({
-      by: ['iconId'],
-      _count: { 
-        iconId: true 
+      by: ["iconId"],
+      _count: {
+        iconId: true,
       },
       _avg: {
-        moodScore: true 
-      }
+        moodScore: true,
+      },
     });
     const emotionDetails = await prisma.emotionIcon.findMany();
-    return stats.map(stat => ({
+    return stats.map((stat) => ({
       ...stat,
-      emotionName: emotionDetails.find(i => i.id === stat.iconId)?.name || "Unknown"
+      emotionName:
+        emotionDetails.find((i) => i.id === stat.iconId)?.name || "Unknown",
     }));
   },
   sendAdminNotification: async (email, subject, message) => {
@@ -111,19 +211,76 @@ const adminStatistics = {
         </p>
       </div>
     `;
-    await sendEmail({ 
-      to: email, 
-      subject: subject || "Thông báo từ Calmify", 
-      html, 
-      text: message 
+    await sendEmail({
+      to: email,
+      subject: subject || "Thông báo từ Calmify",
+      html,
+      text: message,
     });
-    
+
     return { success: true };
-  }
+  },
 };
+
+const getAllUsersWithAssessmentStatus = async () => {
+  return await prisma.user.findMany({
+    select: {
+      id: true,
+      nickname: true,
+      email: true,
+      role: true,
+      createdAt: true,
+      _count: {
+        select: { assessments: true },
+      },
+      assessments: {
+        take: 1,
+        orderBy: { createdAt: "desc" },
+        select: { createdAt: true },
+      },
+    },
+  });
+};
+
+const getUserGrowthStats = async (year = new Date().getFullYear()) => {
+  const queryYear = year || new Date().getFullYear();
+  const users = await prisma.user.findMany({
+    where: {
+      createdAt: {
+        gte: new Date(`${queryYear}-01-01`),
+        lte: new Date(`${queryYear}-12-31`),
+      },
+    },
+    select: { createdAt: true },
+  });
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const growthData = months.map((m) => ({ label: m, count: 0 }));
+
+  users.forEach((user) => {
+    const monthIndex = new Date(user.createdAt).getMonth();
+    growthData[monthIndex].count++;
+  });
+  return growthData;
+};
+
 export default {
-    getStatistics,
-    getAdminOverview,
-    adminStatistics,
-    getTestHistory
+  getStatistics,
+  getTestHistory,
+  getAdminOverview,
+  adminStatistics,
+  getAllUsersWithAssessmentStatus,
+  getUserGrowthStats,
 };
