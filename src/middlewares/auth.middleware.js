@@ -1,6 +1,5 @@
 import jwt from "jsonwebtoken";
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import prisma from "../config/prismaClient.js"; 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
 export const authMiddleware = async (req, res, next) => {
@@ -28,6 +27,7 @@ export const authMiddleware = async (req, res, next) => {
         age: true,
         gender: true,
         job: true,
+        role: true,
         createdAt: true,
       },
     });

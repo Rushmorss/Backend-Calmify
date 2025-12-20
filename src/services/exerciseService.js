@@ -81,3 +81,14 @@ export const deleteExercise = async (id) => {
     where: { id: parseInt(id) }
   });
 };
+
+export const getAllExercisesForAdmin = async ({ search, categoryId }) => {
+  return await prisma.exercise.findMany({
+    where: {
+      title: search ? { contains: search } : undefined,
+      categoryId: categoryId ? parseInt(categoryId) : undefined,
+    },
+    include: { category: { select: { name: true } } },
+    orderBy: { createdAt: 'desc' }
+  });
+};

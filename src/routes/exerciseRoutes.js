@@ -13,5 +13,5 @@ router.delete('/admin/categories/:id', exerciseController.deleteCategory);
 router.post('/admin/content', exerciseController.createExercise);
 router.put('/admin/content/:id', exerciseController.updateExercise);
 router.delete('/admin/content/:id', exerciseController.deleteExercise);
-// router.get('/admin/contents', exerciseController.getAllExercisesForAdmin);// lỗi ở đây 
+router.get('/admin/contents', exerciseController.getAllExercisesForAdmin);
 export default router;

@@ -10,7 +10,7 @@ const OTP_TTL_MINUTES = 10;
 export async function register({ email, password, age, gender, job }) {
   const hashed = await hashPassword(password);
   const user = await prisma.user.create({
-    data: { email, password: hashed, age, gender, job },
+    data: { email, password: hashed, age, gender, job, },
     select: { id: true, email: true, age: true, gender: true, job: true, createdAt: true },
   });
   return user;

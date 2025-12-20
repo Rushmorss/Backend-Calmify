@@ -82,14 +82,13 @@ export const deleteExercise = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-export const getAllExercisesAdmin = async (filters) => {
-  const { search, categoryId } = filters;
-  return await prisma.exercise.findMany({
-    where: {
-      title: search ? { contains: search } : undefined,
-      categoryId: categoryId ? parseInt(categoryId) : undefined,
-    },
-    include: { category: { select: { name: true } } },
-    orderBy: { createdAt: 'desc' }
-  });
+
+export const getAllExercisesForAdmin = async (req, res) => {
+  try {
+    const { search, categoryId } = req.query;
+    const exercises = await exerciseService.getAllExercisesForAdmin({ search, categoryId });
+    res.status(200).json({ success: true, data: exercises });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
