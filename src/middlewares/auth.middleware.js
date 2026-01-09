@@ -1,47 +1,53 @@
 import jwt from "jsonwebtoken";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import prisma from "../config/prismaClient.js"; 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
-const authMiddleware = async (req, res, next) => {
+export const authMiddleware = async (req, res, next) => {
   try {
-    const token =
-      req.headers.authorization?.split(" ")[1] || req.cookies?.token;
-
+    let token = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
+    }
+    if (!token && req.cookies?.accessToken) {
+      token = req.cookies.accessToken;
+    }
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: "No token provided",
+        message: "Bạn chưa đăng nhập",
       });
     }
-
     const decoded = jwt.verify(token, JWT_SECRET);
-
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: {
-        id: true,
-        email: true,
+      select: { 
+        id: true, 
+        email: true,  
+        age: true,
+        gender: true,
+        job: true,
+        role: true,
+        createdAt: true,
       },
     });
-
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "User not found",
-      });
+      return res.status(401).json({success: false, message: "User not found" });
     }
-
     req.user = user;
     next();
   } catch (error) {
-    console.error("Auth error:", error);
-    return res.status(401).json({
+    return res.status(401).json({success: false, message: "Invalid token" });
+  }
+}; 
+export const restrictToAdmin = (req, res, next) => {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({
       success: false,
-      message: "Invalid token",
+      message: "Bạn không có quyền thực hiện hành động này"
     });
   }
+  next();
 };
 
 export default authMiddleware;

@@ -1,0 +1,57 @@
+[
+    {
+      "title": "Thiền chánh niệm",
+      "description": "Các bài thiền giúp giảm căng thẳng, tăng cường sự tập trung và mang lại sự bình yên nội tâm.",
+      "thumbnail": "https://images.unsplash.com/photo-1506126613408-eca07ce68773?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+    },
+    {
+      "title": "Bài tập thở sâu",
+      "description": "Kỹ thuật thở giúp ổn định nhịp tim, giảm hồi hộp và lo âu nhanh chóng.",
+      "thumbnail": "https://images.unsplash.com/photo-1518611012118-696072aa579a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+    },
+    {
+      "title": "Yoga cho người mới bắt đầu",
+      "description": "Chuỗi bài tập yoga nhẹ nhàng giúp cải thiện sự linh hoạt và giảm căng thẳng.",
+      "thumbnail": "https://images.unsplash.com/photo-1552058544-f2b08422138a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+    },
+    {
+      "title": "Thiền 5 phút cho người bận rộn",
+      "description": "Bài thiền ngắn giúp bạn quay về hơi thở và bình tĩnh lại ngay cả khi đang bận rộn.",
+      "instruction": "**Bước 1:** Tìm nơi yên tĩnh.\n**Bước 2:** Ngồi thẳng lưng.\n**Bước 3:** Đeo tai nghe và thả lỏng cơ thể theo video.",
+      "videoUrl": "https://www.youtube.com/embed/O-6f5wQXSu8",
+      "thumbnail": "https://img.youtube.com/vi/O-6f5wQXSu8/maxresdefault.jpg",
+      "categoryId": 1
+    },
+    {
+      "title": "Thiền giảm lo âu và căng thẳng",
+      "description": "Bài tập tập trung vào việc buông bỏ những suy nghĩ tiêu cực.",
+      "instruction": "Hãy nằm xuống hoặc ngồi ở tư thế thoải mái nhất. Tập trung vào nhịp thở 4-7-8.",
+      "videoUrl": "https://www.youtube.com/embed/z6X5oEIg6Ak",
+      "thumbnail": "https://img.youtube.com/vi/z6X5oEIg6Ak/maxresdefault.jpg",
+      "categoryId": 1
+    },
+    {
+      "title": "Thiền dẫn dắt vào giấc ngủ sâu",
+      "description": "Nghe bài này trước khi đi ngủ 15 phút để thư giãn toàn thân.",
+      "instruction": "Tắt hết đèn, nằm ngửa, buông lỏng tay chân.",
+      "videoUrl": "https://www.youtube.com/embed/aEqlQvczMJQ",
+      "thumbnail": "https://img.youtube.com/vi/aEqlQvczMJQ/maxresdefault.jpg",
+      "categoryId": 1
+    },
+    {
+      "title": "Bài tập thở 4-7-8",
+      "description": "Kỹ thuật thở giúp bạn thư giãn nhanh chóng trong những tình huống căng thẳng.",
+      "instruction": "**Bước 1:** Hít vào qua mũi trong 4 giây.\n**Bước 2:** Giữ hơi thở trong 7 giây.\n**Bước 3:** Thở ra qua miệng trong 8 giây.\nLặp lại chu kỳ này 4 lần.",
+      "videoUrl": "https://www.youtube.com/embed/8VwYx9pS6rE",
+      "thumbnail": "https://img.youtube.com/vi/8VwYx9pS6rE/maxresdefault.jpg",
+      "categoryId": 2
+    },
+    {
+      "title": "Yoga buổi sáng cho người mới bắt đầu",
+      "description": "Chuỗi bài tập yoga nhẹ nhàng giúp khởi động cơ thể và tinh thần cho một ngày mới.",
+      "instruction": "Thực hiện các động tác theo video, giữ mỗi tư thế từ 20-30 giây.",
+      "videoUrl": "https://www.youtube.com/embed/v7AYKMP6rOE",
+      "thumbnail": "https://img.youtube.com/vi/v7AYKMP6rOE/maxresdefault.jpg",
+      "categoryId": 3
+    }
+]

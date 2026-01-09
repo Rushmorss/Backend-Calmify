@@ -1,0 +1,13 @@
+[
+    {
+      "email": "example@gmail.com",
+      "password": "Example123@",
+      "age": 22,
+      "gender": "male",
+      "job": "Sinh viên"
+    },
+    {
+      "email": "example@gmail.com",
+      "password": "Example123@"
+    }
+]

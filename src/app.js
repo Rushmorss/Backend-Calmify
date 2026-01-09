@@ -7,6 +7,11 @@ import { fileURLToPath } from "url";
 import authRoutes from "./routes/authRoutes.js";
 import emotionRoutes from "./routes/emotionRoutes.js";
 import exerciseRoutes from "./routes/exerciseRoutes.js"; 
+import statisticalRoutes from "./routes/statisticalRoutes.js";
+import supportRoutes from "./routes/supportRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js";  
+import testRoutes from "./routes/testRoutes.js";  
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,27 +21,39 @@ app.use(
     crossOriginResourcePolicy: false,
   })
 );
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3333",
+];
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"," OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use((req, res, next) => {
-  req.user = { id: 1 };
-  next();
-});
 app.get("/api/test", (req, res) => {
   res.json({ message: "Backend API is working!" });
 });
 app.use("/api/auth", authRoutes);
 app.use("/api/emotions", emotionRoutes);
 app.use("/api/exercises", exerciseRoutes);
+app.use("/api/statistics", statisticalRoutes);
+app.use("/uploads", express.static('uploads'));
+app.use("/api/supports", supportRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/chats", chatRoutes);
+app.use("/api/tests", testRoutes);
 app.use(express.static(path.join(__dirname, "../../frontend/dist")));
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../../frontend/dist/index.html"));
